@@ -7,7 +7,7 @@ import {
   useInView,
   useMotionValue,
   animate,
-  AnimatePresence, // ⬅️ added
+  AnimatePresence,
 } from "framer-motion";
 
 /* ================= Utilities ================= */
@@ -55,6 +55,20 @@ function useScrollSpy(ids) {
     return () => io.disconnect();
   }, [ids]);
   return active;
+}
+
+/* ===== Smooth in-page navigation with header offset ===== */
+function smoothScrollTo(hash) {
+  const id = (hash || "").replace("#", "");
+  const el = document.getElementById(id);
+  if (!el) return;
+  const header = document.querySelector("header");
+  const headerH = header ? header.getBoundingClientRect().height : 72;
+  const extra = 16; // top gap
+  const top = el.getBoundingClientRect().top + window.scrollY - (headerH + extra);
+  // Update URL hash without jumping
+  window.history.pushState(null, "", `#${id}`);
+  window.scrollTo({ top, behavior: "smooth" });
 }
 
 /* ================= Micro UI Bits ================= */
@@ -194,7 +208,6 @@ function useTheme() {
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
   return { theme, setTheme, toggle };
 }
-/* Transparent/glassy button via .btn-ghost */
 function ThemeToggle({ theme, onToggle }) {
   const isDark = theme === "dark";
   return (
@@ -291,6 +304,14 @@ function Nav({ activeId, onOpenCommand }) {
     ], []
   );
 
+  // Click handler for all in-page nav links
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    setOpen(false); // close drawer on mobile
+    // Allow the drawer collapse animation to start, then scroll
+    requestAnimationFrame(() => smoothScrollTo(href));
+  };
+
   return (
     <header className="fixed top-4 left-0 right-0 z-50">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:bg-white focus:text-black focus:rounded-md focus:px-3 focus:py-2">
@@ -303,7 +324,11 @@ function Nav({ activeId, onOpenCommand }) {
             solid ? "bg-black/50 backdrop-blur-md border border-white/15 shadow-[0_10px_30px_-12px_rgba(0,0,0,.5)]" : "glass",
           ].join(" ")}>
           {/* brand */}
-          <a href="#home" className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5">
+          <a
+            href="#home"
+            onClick={(e) => handleNavClick(e, "#home")}
+            className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5"
+          >
             <span className="inline-block h-8 w-8 rounded-full" style={{ background: "color-mix(in oklab, var(--accent) 75%, white)" }} />
             <span className="font-semibold tracking-tight text-fg">
               Parklands Baptist Church
@@ -315,10 +340,14 @@ function Nav({ activeId, onOpenCommand }) {
             {navItems.map((i) => {
               const active = activeId === i.href.slice(1);
               return (
-                <a key={i.href} href={i.href}
-                   className="pill hover:bg-white/10 text-muted hover:text-fg transition-colors"
-                   aria-current={active ? "page" : undefined}
-                   style={active ? { backgroundColor: "var(--active-pill)", color: "var(--fg)" } : undefined}>
+                <a
+                  key={i.href}
+                  href={i.href}
+                  onClick={(e) => handleNavClick(e, i.href)}
+                  className="pill hover:bg-white/10 text-muted hover:text-fg transition-colors"
+                  aria-current={active ? "page" : undefined}
+                  style={active ? { backgroundColor: "var(--active-pill)", color: "var(--fg)" } : undefined}
+                >
                   {i.label}
                 </a>
               );
@@ -339,7 +368,12 @@ function Nav({ activeId, onOpenCommand }) {
             <a className="pill btn-white font-semibold" href="https://parklandsbaptist.org/giving/" target="_blank" rel="noreferrer">
               Give Online
             </a>
-            <a className="pill text-fg font-semibold" href="#get-started" style={{ backgroundColor: "var(--accent)" }}>
+            <a
+              className="pill text-fg font-semibold"
+              href="#get-started"
+              onClick={(e) => handleNavClick(e, "#get-started")}
+              style={{ backgroundColor: "var(--accent)" }}
+            >
               New Here?
             </a>
           </div>
@@ -369,9 +403,9 @@ function Nav({ activeId, onOpenCommand }) {
                       <a
                         key={i.href}
                         href={i.href}
+                        onClick={(e) => handleNavClick(e, i.href)}
                         className="pill hover:bg-white/10"
                         style={active ? { backgroundColor: "rgba(255,255,255,.12)" } : undefined}
-                        onClick={() => setOpen(false)}
                       >
                         {i.label}
                       </a>
@@ -382,7 +416,12 @@ function Nav({ activeId, onOpenCommand }) {
                   <a className="pill hover:bg-white/10 mt-2" href="https://parklandsbaptist.org/new-here/" target="_blank" rel="noreferrer">Service Times</a>
                   {/* ALWAYS WHITE (mobile) */}
                   <a className="pill btn-white font-semibold my-1" href="https://parklandsbaptist.org/giving/" target="_blank" rel="noreferrer">Give Online</a>
-                  <a className="pill font-semibold" href="#get-started" style={{ backgroundColor: "var(--accent)" }} onClick={() => setOpen(false)}>
+                  <a
+                    className="pill font-semibold"
+                    href="#get-started"
+                    onClick={(e) => handleNavClick(e, "#get-started")}
+                    style={{ backgroundColor: "var(--accent)" }}
+                  >
                     New Here?
                   </a>
                 </div>
@@ -416,6 +455,14 @@ export default function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // If page loads with a hash, scroll with offset
+  useEffect(() => {
+    if (window.location.hash) {
+      // Wait a tick for layout to be ready
+      setTimeout(() => smoothScrollTo(window.location.hash), 0);
+    }
+  }, []);
+
   // Parallax
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, reduced ? 0 : -80]);
@@ -440,7 +487,7 @@ export default function App() {
     "Events & Classes": "https://parklandsbaptist.org/events/",
   }), []);
 
-  /* ------- NEW: Search state + filtering ------- */
+  /* Search state + filtering */
   const [search, setSearch] = useState("");
   const filteredItems = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -451,9 +498,9 @@ export default function App() {
   }, [search, featureItems]);
 
   const commands = useMemo(() => [
-    { label: "Go to Home", hint: "#home", action: () => document.getElementById("home")?.scrollIntoView({ behavior: "smooth" }) },
-    { label: "Go to Sign-up Forms", hint: "#blocks", action: () => document.getElementById("blocks")?.scrollIntoView({ behavior: "smooth" }) },
-    { label: "Go to Next Steps", hint: "#get-started", action: () => document.getElementById("get-started")?.scrollIntoView({ behavior: "smooth" }) },
+    { label: "Go to Home", hint: "#home", action: () => smoothScrollTo("#home") },
+    { label: "Go to Sign-up Forms", hint: "#blocks", action: () => smoothScrollTo("#blocks") },
+    { label: "Go to Next Steps", hint: "#get-started", action: () => smoothScrollTo("#get-started") },
 
     { label: "Volunteer & Service Teams", hint: "Open ministries", action: () => window.open(linkMap["Volunteer & Service Teams"], "_blank") },
     { label: "Community Groups", hint: "Housegroups", action: () => window.open(linkMap["Community Groups"], "_blank") },
@@ -504,6 +551,7 @@ export default function App() {
           backgroundPosition: "center",
           filter: "none",
           backgroundBlendMode: "normal",
+          scrollMarginTop: "96px",      // <-- anchor offset
         }}
       >
         <div className="absolute inset-0 hero-overlay" />
@@ -526,19 +574,19 @@ export default function App() {
             </p>
 
             <div className="mt-6 flex items-center gap-3 flex-wrap">
-              {/* ALWAYS WHITE */}
               <Magnetic>
                 <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
-                  href="#blocks" className="pill btn-white font-semibold"
-                  onClick={() => notify("📋 Browse sign-up categories")}>
+                  href="#blocks" onClick={(e) => { e.preventDefault(); smoothScrollTo("#blocks"); }}
+                  className="pill btn-white font-semibold"
+                  onMouseDown={() => {}} // keep React from focusing when needed
+                >
                   Browse Sign-ups
                 </motion.a>
               </Magnetic>
               <Magnetic>
                 <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
                   href="https://parklandsbaptist.org/new-here/" target="_blank" rel="noreferrer"
-                  className="pill glass text-fg hover:bg-white/15"
-                  onClick={() => notify("🕊️ Service times & info")}>
+                  className="pill glass text-fg hover:bg-white/15">
                   Service Times
                 </motion.a>
               </Magnetic>
@@ -574,7 +622,7 @@ export default function App() {
       </section>
 
       {/* SIGN-UP CATEGORIES */}
-      <section id="blocks" className="py-20">
+      <section id="blocks" className="py-20" style={{ scrollMarginTop: "96px" }}>
         <div className="su-container">
           <motion.div
             initial={reduced ? false : { opacity: 0, y: 18 }}
@@ -588,13 +636,8 @@ export default function App() {
               Choose a category to open the form or ministry page. You can select your campus and preferred times where applicable.
             </p>
 
-            {/* ---------- NEW: Search Bar ---------- */}
-            <form
-              role="search"
-              aria-label="Search sign-up categories"
-              className="mt-6"
-              onSubmit={(e) => e.preventDefault()}
-            >
+            {/* Search Bar */}
+            <form role="search" aria-label="Search sign-up categories" className="mt-6" onSubmit={(e) => e.preventDefault()}>
               <div className="glass rounded-full px-3 py-2 flex items-center gap-2">
                 <span aria-hidden>🔎</span>
                 <input
@@ -620,7 +663,6 @@ export default function App() {
                 {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
               </div>
             </form>
-            {/* ---------- /Search Bar ---------- */}
           </motion.div>
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -667,7 +709,7 @@ export default function App() {
       </section>
 
       {/* CTA / NEXT STEPS */}
-      <section id="get-started" className="py-20">
+      <section id="get-started" className="py-20" style={{ scrollMarginTop: "96px" }}>
         <div className="su-container">
           <motion.div
             initial={reduced ? false : { opacity: 0, scale: 0.98 }}
@@ -679,11 +721,10 @@ export default function App() {
             <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-fg">Ready to Sign Up?</h3>
             <p className="mt-3 text-muted">Start with a category above, or jump to key links below.</p>
             <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-              {/* ALWAYS WHITE */}
               <Magnetic>
                 <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}
                   className="pill btn-white font-semibold" href="#blocks"
-                  onClick={() => notify("📋 Browse all sign-ups")}>
+                  onClick={(e) => { e.preventDefault(); smoothScrollTo("#blocks"); }}>
                   Browse Sign-up Forms
                 </motion.a>
               </Magnetic>
