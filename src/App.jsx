@@ -193,7 +193,7 @@ function useTheme() {
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
   return { theme, setTheme, toggle };
 }
-/* UPDATED: transparent/glassy button via .btn-ghost */
+/* Transparent/glassy button via .btn-ghost */
 function ThemeToggle({ theme, onToggle }) {
   const isDark = theme === "dark";
   return (
@@ -425,6 +425,16 @@ export default function App() {
     "Events & Classes": "https://parklandsbaptist.org/events/",
   }), []);
 
+  /* ------- NEW: Search state + filtering ------- */
+  const [search, setSearch] = useState("");
+  const filteredItems = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return featureItems;
+    return featureItems.filter(([title, desc]) =>
+      title.toLowerCase().includes(s) || desc.toLowerCase().includes(s)
+    );
+  }, [search, featureItems]);
+
   const commands = useMemo(() => [
     { label: "Go to Home", hint: "#home", action: () => document.getElementById("home")?.scrollIntoView({ behavior: "smooth" }) },
     { label: "Go to Sign-up Forms", hint: "#blocks", action: () => document.getElementById("blocks")?.scrollIntoView({ behavior: "smooth" }) },
@@ -477,7 +487,6 @@ export default function App() {
             "url(https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1880&auto=format&fit=crop)",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          /* lock image look for both themes */
           filter: "none",
           backgroundBlendMode: "normal",
         }}
@@ -563,10 +572,49 @@ export default function App() {
             <p className="mt-3 text-muted">
               Choose a category to open the form or ministry page. You can select your campus and preferred times where applicable.
             </p>
+
+            {/* ---------- NEW: Search Bar ---------- */}
+            <form
+              role="search"
+              aria-label="Search sign-up categories"
+              className="mt-6"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              <div className="glass rounded-full px-3 py-2 flex items-center gap-2">
+                <span aria-hidden>🔎</span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Escape") setSearch(""); }}
+                  className="w-full bg-transparent outline-none text-fg text-base px-1 py-1"
+                  placeholder="Search ministries, groups, programs, events…"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="pill hover:bg-white/10 text-fg"
+                    aria-label="Clear search"
+                    title="Clear"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <div className="mt-2 text-sm text-muted-2">
+                {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
+              </div>
+            </form>
+            {/* ---------- /Search Bar ---------- */}
           </motion.div>
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featureItems.map(([title, desc]) => (
+            {filteredItems.length === 0 && (
+              <div className="text-muted-2">
+                No matches. Try keywords like <em>Volunteer</em>, <em>Youth</em>, <em>Baptism</em>, or <em>Events</em>.
+              </div>
+            )}
+            {filteredItems.map(([title, desc]) => (
               <motion.div key={title}
                 initial={reduced ? false : { opacity: 0, y: 16 }}
                 whileInView={reduced ? {} : { opacity: 1, y: 0 }}
@@ -643,11 +691,70 @@ export default function App() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="pb-10">
-        <div className="su-container text-center text-muted-2">
-          <div className="h-px bg-white/10 mb-6" />
-          <p>© {new Date().getFullYear()} Parklands Baptist Church • Prof. Saitoti Ave (off Ring Road Westlands) • (+254) 111 023 000 • reception@parklandsbaptist.org</p>
+      {/* ======= ENHANCED FOOTER ======= */}
+      <footer className="pt-14 pb-10">
+        <div className="su-container">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {/* About */}
+            <div className="glass rounded-2xl p-5">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-8 w-8 rounded-full" style={{ background: "color-mix(in oklab, var(--accent) 75%, white)" }} />
+                <span className="font-semibold tracking-tight text-fg">Parklands Baptist Church</span>
+              </div>
+              <p className="mt-3 text-sm text-muted-2">
+                A Christ-centered community in Nairobi with campuses in Westlands, Northgate, and Eastgate - seeking to know Christ and make Him known.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="glass rounded-2xl p-5">
+              <h4 className="font-semibold text-fg">Quick Links</h4>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><a className="hover:underline text-muted" href="https://parklandsbaptist.org/">Church Site</a></li>
+                <li><a className="hover:underline text-muted" href="https://parklandsbaptist.org/about-us/" target="_blank" rel="noreferrer">About Us</a></li>
+                <li><a className="hover:underline text-muted" href="https://parklandsbaptist.org/contact-us/" target="_blank" rel="noreferrer">Contact Us</a></li>
+                <li><a className="hover:underline text-muted" href="https://shop.revivalweek.org/" target="_blank" rel="noreferrer">Shop</a></li>
+                <li><a className="hover:underline text-muted" href="https://parklandsbaptist.org/sermons-grid/" target="_blank" rel="noreferrer">Sermons</a></li>
+              </ul>
+            </div>
+
+            {/* Campuses */}
+            <div className="glass rounded-2xl p-5">
+              <h4 className="font-semibold text-fg">Campuses</h4>
+              <ul className="mt-3 space-y-2 text-sm text-muted-2">
+                <li>Westlands</li>
+                <li>Northgate</li>
+                <li>Eastgate</li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div className="glass rounded-2xl p-5">
+              <h4 className="font-semibold text-fg">Contact</h4>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li className="text-muted-2">Prof. Saitoti Ave (off Ring Road Westlands)</li>
+                <li><a className="hover:underline text-muted" href="tel:+254111023000">(+254) 111 023 000</a></li>
+                <li><a className="hover:underline text-muted" href="mailto:reception@parklandsbaptist.org">reception@parklandsbaptist.org</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 my-6" />
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-2">
+            <div>© {new Date().getFullYear()} Parklands Baptist Church. All rights reserved.</div>
+            <div>
+              Built by{" "}
+              <a
+                href="https://alexnjugi.com"
+                target="_blank"
+                rel="noreferrer"
+                className="underline font-medium text-fg"
+              >
+                Alex Njugi Karanja
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
 
