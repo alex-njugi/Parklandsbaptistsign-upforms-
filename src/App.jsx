@@ -7,6 +7,7 @@ import {
   useInView,
   useMotionValue,
   animate,
+  AnimatePresence, // ⬅️ added
 } from "framer-motion";
 
 /* ================= Utilities ================= */
@@ -349,32 +350,46 @@ function Nav({ activeId, onOpenCommand }) {
           </button>
         </div>
 
-        {/* mobile drawer */}
-        {open && (
-          <div className="mt-2 glass rounded-3xl md:hidden p-2">
-            <div className="flex flex-col">
-              {navItems.map((i) => {
-                const active = activeId === i.href.slice(1);
-                return (
-                  <a key={i.href} href={i.href}
-                     className="pill hover:bg-white/10 text-fg"
-                     style={active ? { backgroundColor: "var(--active-pill)" } : undefined}
-                     onClick={() => setOpen(false)}>
-                    {i.label}
+        {/* mobile drawer: darker + smooth animation */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="mobile-drawer"
+              initial={{ opacity: 0, y: -12, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="mt-2 md:hidden overflow-hidden"
+            >
+              <div className="rounded-3xl p-2 border border-white/15 bg-black/80 backdrop-blur-md shadow-[0_20px_60px_-12px_rgba(0,0,0,.6)]">
+                <div className="flex flex-col text-white">
+                  {navItems.map((i) => {
+                    const active = activeId === i.href.slice(1);
+                    return (
+                      <a
+                        key={i.href}
+                        href={i.href}
+                        className="pill hover:bg-white/10"
+                        style={active ? { backgroundColor: "rgba(255,255,255,.12)" } : undefined}
+                        onClick={() => setOpen(false)}
+                      >
+                        {i.label}
+                      </a>
+                    );
+                  })}
+                  <div className="h-px bg-white/15 my-2" />
+                  <button onClick={onOpenCommand} className="pill hover:bg-white/10" aria-label="Command palette">⌘K</button>
+                  <a className="pill hover:bg-white/10 mt-2" href="https://parklandsbaptist.org/new-here/" target="_blank" rel="noreferrer">Service Times</a>
+                  {/* ALWAYS WHITE (mobile) */}
+                  <a className="pill btn-white font-semibold my-1" href="https://parklandsbaptist.org/giving/" target="_blank" rel="noreferrer">Give Online</a>
+                  <a className="pill font-semibold" href="#get-started" style={{ backgroundColor: "var(--accent)" }} onClick={() => setOpen(false)}>
+                    New Here?
                   </a>
-                );
-              })}
-              <div className="h-px bg-white/10 my-2" />
-              <button onClick={onOpenCommand} className="pill hover:bg-white/10 text-fg" aria-label="Command palette">⌘K</button>
-              <a className="pill hover:bg-white/10 text-fg mt-2" href="https://parklandsbaptist.org/new-here/" target="_blank" rel="noreferrer">Service Times</a>
-              {/* ALWAYS WHITE (mobile) */}
-              <a className="pill btn-white font-semibold my-1" href="https://parklandsbaptist.org/giving/" target="_blank" rel="noreferrer">Give Online</a>
-              <a className="pill text-fg font-semibold" href="#get-started" style={{ backgroundColor: "var(--accent)" }}>
-                New Here?
-              </a>
-            </div>
-          </div>
-        )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );
