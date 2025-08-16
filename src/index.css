@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/* ========== base ========== */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+}
+
+/* ========== theme tokens ========== */
+/* Default (dark) */
+:root {
+  --bg: #0b1220;
+  --fg: #ffffff;
+  --muted: rgba(255,255,255,.80);
+  --muted-2: rgba(255,255,255,.65);
+  --card-bg: rgba(255,255,255,0.08);
+  --glass-bg: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.18);
+  --ring: rgba(167,139,250,.8);
+  --ring-halo: rgba(167,139,250,.25);
+  --active-pill: rgba(255,255,255,.15);
+  --btn-fg: #0b1220; /* dark text on bright accent */
+}
+
+/* Light */
+:root[data-theme="light"] {
+  --bg: #f7f7fb;
+  --fg: #0b1220;
+  --muted: rgba(11,18,32,.78);
+  --muted-2: rgba(11,18,32,.62);
+  --card-bg: rgba(255,255,255,0.75);
+  --glass-bg: rgba(255,255,255,0.8);
+  --border: rgba(11,18,32,0.12);
+  --ring: rgba(139,92,246,.85);
+  --ring-halo: rgba(139,92,246,.25);
+  --active-pill: rgba(11,18,32,.08);
+  --btn-fg: #0b1220;
+}
+
+.theme-root {
+  background: var(--bg);
+  color: var(--fg);
+  color-scheme: dark;
+}
+:root[data-theme="light"] .theme-root { color-scheme: light; }
+
+/* Text helpers */
+.text-fg { color: var(--fg); }
+.text-muted { color: var(--muted); }
+.text-muted-2 { color: var(--muted-2); }
+
+/* Buttons */
+.pill { border-radius: 9999px; padding: .5rem 1rem; }
+
+/* Primary (accent) button */
+.btn-primary {
+  background-color: var(--accent, #0ea5e9);
+  color: var(--btn-fg);
+}
+.btn-primary:hover { filter: brightness(1.05); }
+
+/* NEW: transparent/glassy “ghost” button (for theme toggle) */
+.btn-ghost {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px -12px rgba(0,0,0,.35);
+  cursor: pointer;
+  transition: transform .15s ease, background-color .15s ease, box-shadow .2s ease;
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.06); }
+.btn-ghost:active { transform: translateY(1px); }
+/* make the border a bit stronger in light for visibility on pale backgrounds */
+:root[data-theme="light"] .btn-ghost { border-color: rgba(11,18,32,.20); }
+
+/* NEW: force white button (for Give Online + Browse Sign-ups) */
+.btn-white {
+  background-color: #ffffff !important;
+  color: #0b1220 !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.35);
+  transition: transform .15s ease, filter .15s ease, box-shadow .2s ease;
+}
+.btn-white:hover { filter: brightness(0.98); }
+.btn-white:active { transform: translateY(1px); }
+
+/* ========== helpers for soft/glass look ========== */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.25),
+    0 20px 60px -12px rgba(0,0,0,.35);
+}
+
+/* container tuned to reference width */
+.su-container { width: 100%; max-width: 1140px; margin-inline: auto; padding-inline: 1rem; }
+
+/* soft hero glow */
+.hero-gradient {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,0.15), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+}
+
+/* theme-agnostic readability overlay on hero */
+.hero-overlay {
+  background: linear-gradient(to bottom, rgba(11,18,32,.25), rgba(11,18,32,.75)) !important;
+}
+
+/* Keep hero background identical in both themes */
+#home[data-fixed-bg] {
+  filter: none !important;
+  background-blend-mode: normal !important;
+}
+
+/* soft cards */
+.card {
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  transition: transform .3s ease, box-shadow .25s ease, background-color .25s ease;
+  box-shadow:
+    0 10px 30px -12px rgba(0,0,0,.25),
+    0 0 0 1px rgba(255,255,255,.25);
+}
+.card:hover { transform: translateY(-4px); }
+
+/* ========== UX polish ========== */
+:where(a,button).pill:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--ring),
+    0 0 0 6px var(--ring-halo);
+}
+
+:where(.glass,.card):focus-within {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.45),
+    0 22px 70px -16px rgba(0,0,0,.45),
+    0 0 0 4px var(--ring-halo);
+}
+
+::selection { background: rgba(167,139,250,.35); color: #fff; }
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .card, .glass, .pill { transition: none !important; }
+  .will-change-transform { will-change: auto; }
+}
